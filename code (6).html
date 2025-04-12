@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How a Bill Becomes Law - Jeopardy</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #003366;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        /* Timer Styles */
+        .timer-setup {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            color: #555;
+        }
+        .timer-setup label {
+            margin-right: 5px;
+        }
+        .timer-setup input {
+            width: 40px;
+            padding: 3px;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            margin: 0 2px;
+        }
+         .timer-setup button { /* Style for the Set button */
+             margin-left: 5px;
+             padding: 3px 6px;
+             font-size: 0.9em;
+             cursor: pointer;
+         }
+
+        .timer {
+            position: fixed;
+            top: 10px;
+            right: 15px;
+            background-color: #003366;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 1.1em;
+            z-index: 1001;
+            min-width: 60px;
+            text-align: center;
+        }
+        .timer.times-up { /* Style for when time is up */
+           color: #ffcccc;
+           font-weight: bold;
+           background-color: #a00;
+        }
+
+
+        /* Scoreboard Styles */
+        .scoreboard {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            width: 90%;
+            max-width: 1000px;
+            margin: 15px auto;
+            background-color: #e0e0e0;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .team {
+            text-align: center;
+            padding: 0 10px;
+            flex: 1;
+            min-width: 150px;
+            margin-bottom: 10px;
+        }
+        .team input[type="text"] {
+            border: 1px solid #ccc;
+            padding: 5px;
+            margin-bottom: 5px;
+            width: 90%;
+            max-width: 140px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .team .score {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #0066cc;
+            margin: 5px 0;
+        }
+        .team button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 1px 1px;
+            cursor: pointer;
+            border-radius: 4px;
+            min-width: 45px;
+        }
+        .team button.subtract {
+            background-color: #f44336;
+        }
+
+
+        /* Jeopardy Grid Style */
+        .jeopardy-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+            width: 95%;
+            max-width: 1200px;
+            margin: 20px auto;
+            background-color: #003366;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .category-header, .question-cell {
+            background-color: #003366;
+            color: white;
+            padding: 15px 5px;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 5px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1em;
+        }
+
+        .category-header {
+            font-size: 0.9em;
+            text-transform: uppercase;
+            background-color: #002244;
+            word-wrap: break-word;
+        }
+
+        .question-cell {
+            background-color: #004488;
+            color: #FFCC00;
+            font-size: 1.6em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .question-cell:not(.answered):hover {
+            background-color: #0055aa;
+             transform: scale(1.03);
+        }
+
+        .question-cell.answered {
+            background-color: #555 !important; /* Use important to override hover */
+            color: #aaa;
+            cursor: default;
+            font-size: 1em;
+            pointer-events: none;
+            text-decoration: line-through;
+            transform: none !important; /* Prevent hover zoom */
+        }
+         .question-cell.empty {
+             background-color: #002244;
+             pointer-events: none;
+             cursor: default;
+             color: #002244; /* Hide text */
+         }
+
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 8% auto;
+            padding: 30px;
+            border: 1px solid #888;
+            width: 70%;
+            max-width: 800px;
+            border-radius: 10px;
+            position: relative;
+            text-align: center;
+            font-size: 1.4em;
+        }
+        .modal-question-text {
+            margin-bottom: 20px;
+            color: #003366;
+            min-height: 50px;
+            line-height: 1.4;
+        }
+        .modal-answer-text {
+            display: none;
+            margin-top: 20px;
+            color: #006600;
+            font-style: italic;
+            line-height: 1.4;
+        }
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        #show-answer-button {
+            background-color: #ff9800;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 15px;
+        }
+         #show-answer-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+         }
+
+        /* Reset Button Style */
+        #reset-button {
+            margin-top: 30px;
+            margin-bottom: 20px;
+            padding: 12px 25px;
+            font-size: 1.1em;
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        #reset-button:hover {
+            background-color: #c9302c;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>How a Bill Becomes Law - Jeopardy</h1>
+
+    <!-- Timer Setup -->
+    <div class="timer-setup">
+        <label for="timer-minutes">Set Timer (MM:SS):</label>
+        <input type="number" id="timer-minutes" value="15" min="0" max="99" aria-label="Minutes"> :
+        <input type="number" id="timer-seconds" value="00" min="0" max="59" aria-label="Seconds">
+        <button id="set-timer-button">Set</button>
+    </div>
+
+    <!-- Timer Display -->
+    <div class="timer" id="timer">15:00</div>
+
+    <!-- Scoreboard -->
+    <div class="scoreboard">
+        <!-- Team structures remain the same -->
+        <div class="team" id="team1">
+            <input type="text" value="Team 1" placeholder="Enter Team 1 Name">
+            <div class="score">0</div>
+            <button class="add" data-team="1" data-value="100">+100</button>
+            <button class="subtract" data-team="1" data-value="100">-100</button><br>
+            <button class="add" data-team="1" data-value="200">+200</button>
+            <button class="subtract" data-team="1" data-value="200">-200</button><br>
+            <button class="add" data-team="1" data-value="300">+300</button>
+            <button class="subtract" data-team="1" data-value="300">-300</button><br>
+            <button class="add" data-team="1" data-value="400">+400</button>
+            <button class="subtract" data-team="1" data-value="400">-400</button><br>
+            <button class="add" data-team="1" data-value="500">+500</button>
+            <button class="subtract" data-team="1" data-value="500">-500</button>
+        </div>
+        <div class="team" id="team2">
+            <input type="text" value="Team 2" placeholder="Enter Team 2 Name">
+            <div class="score">0</div>
+            <button class="add" data-team="2" data-value="100">+100</button>
+            <button class="subtract" data-team="2" data-value="100">-100</button><br>
+            <button class="add" data-team="2" data-value="200">+200</button>
+            <button class="subtract" data-team="2" data-value="200">-200</button><br>
+            <button class="add" data-team="2" data-value="300">+300</button>
+            <button class="subtract" data-team="2" data-value="300">-300</button><br>
+            <button class="add" data-team="2" data-value="400">+400</button>
+            <button class="subtract" data-team="2" data-value="400">-400</button><br>
+            <button class="add" data-team="2" data-value="500">+500</button>
+            <button class="subtract" data-team="2" data-value="500">-500</button>
+        </div>
+        <div class="team" id="team3">
+            <input type="text" value="Team 3" placeholder="Enter Team 3 Name">
+            <div class="score">0</div>
+            <button class="add" data-team="3" data-value="100">+100</button>
+            <button class="subtract" data-team="3" data-value="100">-100</button><br>
+            <button class="add" data-team="3" data-value="200">+200</button>
+            <button class="subtract" data-team="3" data-value="200">-200</button><br>
+            <button class="add" data-team="3" data-value="300">+300</button>
+            <button class="subtract" data-team="3" data-value="300">-300</button><br>
+            <button class="add" data-team="3" data-value="400">+400</button>
+            <button class="subtract" data-team="3" data-value="400">-400</button><br>
+            <button class="add" data-team="3" data-value="500">+500</button>
+            <button class="subtract" data-team="3" data-value="500">-500</button>
+        </div>
+    </div>
+
+    <!-- Jeopardy Grid -->
+    <div class="jeopardy-grid" id="jeopardy-grid">
+        <!-- Content generated by JavaScript -->
+    </div>
+
+    <!-- Reset Button -->
+    <button id="reset-button">Reset Game</button>
+
+    <!-- Question Modal -->
+    <div id="question-modal" class="modal">
+         <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div class="modal-question-text" id="modal-question">Question text goes here</div>
+            <button id="show-answer-button">Show Question (Answer)</button>
+            <div class="modal-answer-text" id="modal-answer">Answer text goes here</div>
+        </div>
+    </div>
+
+    <script>
+        const gameData = [
+            // ... (Game Data remains exactly the same) ...
+             {
+                category: "Bill Basics",
+                questions: [
+                    { value: 100, clue: "Any member can introduce this piece of legislation.", question: "What is a bill?" },
+                    { value: 200, clue: "Bills are assigned this, like HR 1 or S 1.", question: "What is a number?" },
+                    { value: 300, clue: "This type of bill affects only a specific person or organization, often dealing with immigration.", question: "What is a Private Bill?" },
+                    { value: 400, clue: "Members who formally add their names in support of another member's bill.", question: "Who are co-sponsors?" },
+                    { value: 500, clue: "H Res or S Res denotes this type of legislation used to express the sense of a chamber but doesn't become law.", question: "What is a Simple Resolution?" }
+                ]
+            },
+            {
+                category: "The House",
+                questions: [
+                    { value: 100, clue: "The box on the Clerk's desk where House members deposit bills.", question: "What is the Hopper?" },
+                    { value: 200, clue: "The minimum number of House members (218) needed to conduct business.", question: "What is a quorum?" },
+                    { value: 300, clue: "Most bills go to this powerful committee before reaching the House floor; it sets debate limits and amendment rules.", question: "What is the Rules Committee?" },
+                    { value: 400, clue: "A 'closed rule' set by the Rules Committee forbids this during floor debate.", question: "What is the introduction of amendments?" },
+                    { value: 500, clue: "Signed by 218 members, this forces a bill out of committee and onto the House floor.", question: "What is a Discharge Petition?" }
+                ]
+            },
+            {
+                category: "The Senate",
+                questions: [
+                    { value: 100, clue: "Unlike the House, Senators must gain this from the presiding officer to introduce a bill.", question: "What is recognition?" },
+                    { value: 200, clue: "Debate in the Senate is typically this, unless cloture is invoked.", question: "What is unlimited?" },
+                    { value: 300, clue: "An informal term for an amendment or provision attached to a bill that isn't relevant to the main subject.", question: "What is a rider?" },
+                    { value: 400, clue: "The tactic of 'talking a bill to death' to prevent a vote.", question: "What is a filibuster?" },
+                    { value: 500, clue: "Requiring a 3/5 vote (60 Senators), this motion ends a filibuster.", question: "What is cloture?" }
+                ]
+            },
+            {
+                category: "Committees",
+                questions: [
+                    { value: 100, clue: "After introduction, a bill is referred to the appropriate one of these.", question: "What is a committee?" },
+                    { value: 200, clue: "Committees often hold these sessions to gather information and hear testimony on a bill.", question: "What are hearings?" },
+                    { value: 300, clue: "The committee session where members make revisions and additions to a bill.", question: "What is a 'mark-up' session?" },
+                    { value: 400, clue: "If substantial changes are made, a committee might introduce this type of bill with a new number.", question: "What is a 'clean bill'?" },
+                    { value: 500, clue: "Members from both houses meet in this committee to resolve differences between House and Senate versions of a bill.", question: "What is a Conference Committee?" }
+                ]
+            },
+            {
+                category: "Presidential Actions",
+                questions: [
+                    { value: 100, clue: "The President takes this action to approve a bill and make it law.", question: "What is signing the bill?" },
+                    { value: 200, clue: "If the President refuses to approve a bill, they issue this.", question: "What is a veto?" },
+                    { value: 300, clue: "A bill becomes law without the President's signature if Congress is in session and they don't act within this timeframe.", question: "What is 10 days?" },
+                    { value: 400, clue: "If Congress adjourns within 10 days of sending a bill and the President doesn't sign it, it's called this.", question: "What is a Pocket Veto?" },
+                    { value: 500, clue: "Congress can take this action with a 2/3 vote in both chambers to make a vetoed bill become law.", question: "What is overriding the veto?" }
+                ]
+            },
+            {
+                category: "Special Procedures",
+                questions: [
+                    { value: 100, clue: "An amendment in the House must typically meet this standard of relevance.", question: "What is being germane?" },
+                    { value: 200, clue: "This House procedure allows committees to bring reported bills to the floor on a specific day, limiting debate.", question: "What is Calendar Wednesday?" },
+                    { value: 300, clue: "This committee, comprising all House members, allows for faster consideration of bills under relaxed rules.", question: "What is the Committee of the Whole?" },
+                    { value: 400, clue: "This House procedure limits debate to 40 minutes, bars amendments, and requires a 2/3 vote for passage.", question: "What is Suspension of the Rules?" },
+                    { value: 500, clue: "The official record keeper of the House or Senate who often makes the actual referral decision on bills.", question: "Who is the Parliamentarian?" }
+                ]
+            }
+        ]; // End of gameData
+
+        // DOM Element References
+        const grid = document.getElementById('jeopardy-grid');
+        const modal = document.getElementById('question-modal');
+        const modalQuestion = document.getElementById('modal-question');
+        const modalAnswer = document.getElementById('modal-answer');
+        const showAnswerButton = document.getElementById('show-answer-button');
+        const closeButton = document.querySelector('.close-button');
+        const resetButton = document.getElementById('reset-button');
+        const scoreboard = document.querySelector('.scoreboard');
+        const timerDisplay = document.getElementById('timer');
+        const timerMinutesInput = document.getElementById('timer-minutes');
+        const timerSecondsInput = document.getElementById('timer-seconds');
+        const setTimerButton = document.getElementById('set-timer-button');
+
+        // State Variables
+        let timerInterval = null;
+        let secondsRemaining = 0;
+        let currentCell = null; // Tracks the *DOM element* of the currently opened question cell
+
+        // Audio Context for Sound Alert
+        let audioContext;
+        function initAudio() {
+             if (!audioContext && (window.AudioContext || window.webkitAudioContext)) {
+                 try {
+                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                     // console.log("AudioContext initialized."); // Keep for debugging if needed
+                 } catch (e) {
+                     console.error("Web Audio API is not supported in this browser", e);
+                 }
+             }
+         }
+        document.body.addEventListener('click', initAudio, { once: true });
+        document.body.addEventListener('keydown', initAudio, { once: true });
+
+        function playTimesUpSound() {
+            if (!audioContext) return;
+             const oscillator = audioContext.createOscillator();
+             const gainNode = audioContext.createGain();
+             oscillator.connect(gainNode);
+             gainNode.connect(audioContext.destination);
+             oscillator.type = 'sine';
+             oscillator.frequency.setValueAtTime(660, audioContext.currentTime);
+             gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+             gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.5);
+             oscillator.start(audioContext.currentTime);
+             oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        // Format time as MM:SS
+        function formatTime(totalSeconds) {
+             if (totalSeconds < 0) totalSeconds = 0;
+            const mins = Math.floor(totalSeconds / 60);
+            const secs = totalSeconds % 60;
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        // Start or restart the countdown timer
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = null;
+
+            let minutes = parseInt(timerMinutesInput.value) || 0;
+            let seconds = parseInt(timerSecondsInput.value) || 0;
+            seconds = Math.max(0, Math.min(59, seconds));
+            timerMinutesInput.value = String(minutes).padStart(2,'0');
+            timerSecondsInput.value = String(seconds).padStart(2,'0');
+
+            secondsRemaining = (minutes * 60) + seconds;
+
+            timerDisplay.textContent = formatTime(secondsRemaining);
+            timerDisplay.classList.remove('times-up');
+            // Ensure grid is clickable when timer starts (might have been disabled)
+            grid.style.pointerEvents = 'auto';
+
+
+            if (secondsRemaining > 0) {
+                timerInterval = setInterval(() => {
+                    secondsRemaining--;
+                    timerDisplay.textContent = formatTime(secondsRemaining);
+
+                    if (secondsRemaining <= 0) {
+                        clearInterval(timerInterval);
+                        timerInterval = null;
+                        timerDisplay.textContent = "Time's Up!";
+                        timerDisplay.classList.add('times-up');
+                        playTimesUpSound();
+                        // Disable further question clicks when time is up
+                        grid.style.pointerEvents = 'none';
+                    }
+                }, 1000);
+            } else {
+                 // Handle case where time starts at 00:00
+                 timerDisplay.textContent = "00:00"; // Show 00:00 instead of "Time's up" immediately
+                 grid.style.pointerEvents = 'none'; // Disable clicks if starting at 0
+            }
+        }
+
+        // Build the Jeopardy grid dynamically
+        function buildBoard() {
+             grid.innerHTML = '';
+             grid.style.pointerEvents = 'auto';
+
+             gameData.forEach(cat => {
+                 const catDiv = document.createElement('div');
+                 catDiv.classList.add('category-header');
+                 catDiv.textContent = cat.category;
+                 grid.appendChild(catDiv);
+             });
+
+             const maxQuestions = gameData.reduce((max, cat) => Math.max(max, cat.questions.length), 0);
+             const numCategories = gameData.length;
+
+             for (let i = 0; i < maxQuestions; i++) {
+                 for (let j = 0; j < numCategories; j++) {
+                     const questionData = gameData[j].questions[i];
+                     const cell = document.createElement('div');
+
+                     if (questionData) {
+                         cell.classList.add('question-cell');
+                         cell.textContent = `$${questionData.value}`;
+                         cell.dataset.categoryIndex = j; // Store data reference
+                         cell.dataset.questionIndex = i;
+                         cell.dataset.value = questionData.value; // Store value for potential score changes
+                         // Add the event listener HERE
+                         cell.addEventListener('click', handleQuestionClick);
+                     } else {
+                         cell.classList.add('question-cell', 'empty');
+                         cell.textContent = ''; // Keep empty cells visually blank
+                     }
+                     grid.appendChild(cell);
+                 }
+             }
+         }
+
+        // --- CORRECTED: Handle clicking on a question cell ---
+        function handleQuestionClick(event) {
+            // Get the cell that was clicked
+            const clickedCell = event.currentTarget; // Use currentTarget for the element listener was attached to
+
+            // console.log('Cell clicked:', clickedCell); // Debugging line
+
+            // Prevent action if cell already answered or time is up
+             if (clickedCell.classList.contains('answered') || timerDisplay.classList.contains('times-up')) {
+                 // console.log('Click blocked: Cell answered or time is up.'); // Debugging line
+                 return;
+             }
+
+             // Store the clicked cell globally so closeModal can mark it
+             currentCell = clickedCell;
+
+            // Retrieve data using dataset attributes
+            const catIndex = parseInt(currentCell.dataset.categoryIndex);
+            const qIndex = parseInt(currentCell.dataset.questionIndex);
+
+            // Check if indices are valid before accessing gameData
+             if (isNaN(catIndex) || isNaN(qIndex) || !gameData[catIndex] || !gameData[catIndex].questions[qIndex]) {
+                 console.error("Invalid data indices for clicked cell:", currentCell.dataset);
+                 return; // Prevent errors if data attributes are missing/wrong
+             }
+
+            const questionInfo = gameData[catIndex].questions[qIndex];
+
+            // Populate and show the modal
+            modalQuestion.textContent = questionInfo.clue;
+            modalAnswer.textContent = `Question: ${questionInfo.question}`;
+            modalAnswer.style.display = 'none'; // Ensure answer is hidden initially
+            showAnswerButton.disabled = false;
+            showAnswerButton.textContent = 'Show Question (Answer)';
+
+            // console.log('Showing modal'); // Debugging line
+            modal.style.display = 'block';
+        }
+
+        // Show the correct question in the modal
+        function showAnswer() {
+            // console.log('Showing answer'); // Debugging line
+            modalAnswer.style.display = 'block';
+            showAnswerButton.disabled = true;
+            showAnswerButton.textContent = 'Answer Shown';
+        }
+
+        // Close the question modal
+        function closeModal() {
+             // console.log('Closing modal'); // Debugging line
+             modal.style.display = 'none';
+             // Mark the specific cell stored in currentCell as answered
+             if (currentCell && !currentCell.classList.contains('answered')) {
+                 // console.log('Marking cell as answered:', currentCell); // Debugging line
+                 currentCell.classList.add('answered');
+             }
+             currentCell = null; // Reset the tracker AFTER potentially using it
+         }
+
+        // Update team scores
+        function updateScore(teamIndex, amount, operation) {
+             const teamElement = document.getElementById(`team${teamIndex}`);
+             if (!teamElement) return;
+             const scoreElement = teamElement.querySelector('.score');
+             let currentScore = parseInt(scoreElement.textContent) || 0;
+
+             if (operation === 'add') {
+                 currentScore += amount;
+             } else if (operation === 'subtract') {
+                 currentScore -= amount;
+             }
+             scoreElement.textContent = currentScore;
+        }
+
+        // Reset the entire game state
+        function resetGame() {
+            // console.log("Resetting Game..."); // Debugging line
+            document.querySelectorAll('.team .score').forEach(scoreEl => {
+                scoreEl.textContent = '0';
+            });
+
+            buildBoard(); // This rebuilds the grid and re-attaches listeners
+            startTimer(); // This restarts the timer and ensures grid clicks are enabled
+
+            if (modal.style.display === 'block') {
+                closeModal();
+            }
+        }
+
+        // --- Event Listeners Setup ---
+        showAnswerButton.addEventListener('click', showAnswer);
+        closeButton.addEventListener('click', closeModal);
+        resetButton.addEventListener('click', resetGame);
+        setTimerButton.addEventListener('click', startTimer);
+
+        window.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+
+        scoreboard.addEventListener('click', (event) => {
+            const button = event.target.closest('button');
+            if (button && (button.classList.contains('add') || button.classList.contains('subtract'))) {
+                 const teamIndex = button.dataset.team;
+                 const value = parseInt(button.dataset.value);
+                 const operation = button.classList.contains('add') ? 'add' : 'subtract';
+                 updateScore(teamIndex, value, operation);
+             }
+        });
+
+
+        // --- Initial Game Setup ---
+        buildBoard();
+        startTimer();
+
+    </script>
+
+</body>
+</html>
